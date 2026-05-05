@@ -5,6 +5,12 @@ import { RecordFormat, RecordCategory } from './record.enum';
 // strength: 2 = case-insensitive, accent-sensitive.
 export const RECORD_COLLATION = { locale: 'en', strength: 2 } as const;
 
+export interface TrackEntry {
+  position: number;
+  title: string;
+  length?: number;
+}
+
 @Schema({ timestamps: true })
 export class Record extends Document {
   @Prop({ required: true })
@@ -34,8 +40,12 @@ export class Record extends Document {
   @Prop({ required: false, index: true, sparse: true })
   mbid?: string;
 
-  @Prop({ type: [String], default: [] })
-  tracklist: string[];
+  @Prop({
+    type: [{ position: Number, title: String, length: Number }],
+    default: [],
+    _id: false,
+  })
+  tracklist: TrackEntry[];
 }
 
 export const RecordSchema = SchemaFactory.createForClass(Record);

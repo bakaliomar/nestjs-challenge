@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { RecordFormat, RecordCategory } from '../src/api/schemas/record.enum';
+import { MusicBrainzService } from '../src/musicbrainz/musicbrainz.service';
 
 describe('RecordController (e2e)', () => {
   let app: INestApplication;
@@ -12,7 +13,10 @@ describe('RecordController (e2e)', () => {
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(MusicBrainzService)
+      .useValue({ fetchTracklist: jest.fn().mockResolvedValue([]) })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     recordModel = app.get('RecordModel');
@@ -60,8 +64,9 @@ describe('RecordController (e2e)', () => {
     const response = await request(app.getHttpServer())
       .get('/records?artist=The Fake Band')
       .expect(200);
-    expect(response.body.length).toBe(1);
-    expect(response.body[0]).toHaveProperty('artist', 'The Fake Band');
+    expect(response.body.total).toBe(1);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0]).toHaveProperty('artist', 'The Fake Band');
   });
   afterEach(async () => {
     if (recordId) {
