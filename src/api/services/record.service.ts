@@ -5,13 +5,14 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model } from 'mongoose';
-import { RECORD_COLLATION, Record } from '../schemas/record.schema';
+import { RECORD_COLLATION, Record, TrackEntry } from '../schemas/record.schema';
 import { CreateRecordRequestDTO } from '../dtos/create-record.request.dto';
 import { UpdateRecordRequestDTO } from '../dtos/update-record.request.dto';
 import {
   FindRecordsQueryDTO,
   PaginatedRecords,
 } from '../dtos/find-records.query.dto';
+import { MusicBrainzService } from '../../musicbrainz/musicbrainz.service';
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -19,12 +20,15 @@ const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export class RecordService {
   constructor(
     @InjectModel('Record') private readonly recordModel: Model<Record>,
+    private readonly musicBrainz: MusicBrainzService,
   ) {}
 
   async create(dto: CreateRecordRequestDTO): Promise<Record> {
+    const tracklist = dto.mbid ? await this.tracklistFor(dto.mbid) : [];
     try {
       return await this.recordModel.create({
         ...dto,
+        tracklist,
         lastModified: new Date(),
       });
     } catch (err: any) {
@@ -38,12 +42,23 @@ export class RecordService {
   }
 
   async update(id: string, dto: UpdateRecordRequestDTO): Promise<Record> {
+    const existing = await this.recordModel.findById(id);
+    if (!existing) throw new NotFoundException(`Record ${id} not found`);
+
+    const update: Partial<Record> & UpdateRecordRequestDTO = {
+      ...dto,
+      lastModified: new Date(),
+    };
+
+    if (dto.mbid !== undefined && dto.mbid !== existing.mbid) {
+      update.tracklist = dto.mbid ? await this.tracklistFor(dto.mbid) : [];
+    }
+
     try {
-      const updated = await this.recordModel.findByIdAndUpdate(
-        id,
-        { ...dto, lastModified: new Date() },
-        { new: true, runValidators: true },
-      );
+      const updated = await this.recordModel.findByIdAndUpdate(id, update, {
+        new: true,
+        runValidators: true,
+      });
       if (!updated) throw new NotFoundException(`Record ${id} not found`);
       return updated;
     } catch (err: any) {
@@ -113,5 +128,13 @@ export class RecordService {
       limit,
       totalPages: total === 0 ? 0 : Math.ceil(total / limit),
     };
+  }
+
+  private async tracklistFor(mbid: string): Promise<TrackEntry[]> {
+    try {
+      return (await this.musicBrainz.fetchTracklist(mbid)) ?? [];
+    } catch {
+      return [];
+    }
   }
 }
