@@ -6,6 +6,7 @@ import {
   IsInt,
   IsEnum,
   IsOptional,
+  IsUUID,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { RecordFormat, RecordCategory } from '../schemas/record.enum';
@@ -46,7 +47,7 @@ export class UpdateRecordRequestDTO {
   @ApiProperty({
     description: 'Quantity of the record in stock',
     type: Number,
-    example: 1000,
+    example: 50,
     required: false,
   })
   @IsInt()
@@ -76,11 +77,12 @@ export class UpdateRecordRequestDTO {
   category?: RecordCategory;
 
   @ApiProperty({
-    description: 'Musicbrainz identifier',
+    description: 'Musicbrainz identifier (UUID).',
     type: String,
     example: 'b10bbbfc-cf9e-42e0-be17-e2c3e1d2600d',
     required: false,
   })
   @IsOptional()
+  @IsUUID()
   mbid?: string;
 }
