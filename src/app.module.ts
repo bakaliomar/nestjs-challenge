@@ -2,10 +2,15 @@ import { Module, ValidationPipe } from '@nestjs/common';
 import { APP_PIPE } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RecordModule } from './api/record.module';
+import { OrdersModule } from './orders/orders.module';
 import { AppConfig } from './app.config';
 
 @Module({
-  imports: [MongooseModule.forRoot(AppConfig.mongoUrl), RecordModule],
+  imports: [
+    MongooseModule.forRoot(AppConfig.mongoUrl),
+    RecordModule,
+    OrdersModule,
+  ],
   controllers: [],
   providers: [
     {
