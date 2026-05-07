@@ -31,12 +31,6 @@ export class Record extends Document {
   @Prop({ enum: RecordCategory, required: true, index: true })
   category: RecordCategory;
 
-  @Prop({ default: Date.now })
-  created: Date;
-
-  @Prop({ default: Date.now })
-  lastModified: Date;
-
   @Prop({ required: false, index: true, sparse: true })
   mbid?: string;
 
