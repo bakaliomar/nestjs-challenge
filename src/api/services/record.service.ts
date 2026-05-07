@@ -29,7 +29,6 @@ export class RecordService {
       return await this.recordModel.create({
         ...dto,
         tracklist,
-        lastModified: new Date(),
       });
     } catch (err: any) {
       if (err?.code === 11000) {
@@ -45,10 +44,7 @@ export class RecordService {
     const existing = await this.recordModel.findById(id);
     if (!existing) throw new NotFoundException(`Record ${id} not found`);
 
-    const update: Partial<Record> & UpdateRecordRequestDTO = {
-      ...dto,
-      lastModified: new Date(),
-    };
+    const update: Partial<Record> & UpdateRecordRequestDTO = { ...dto };
 
     if (dto.mbid !== undefined && dto.mbid !== existing.mbid) {
       update.tracklist = dto.mbid ? await this.tracklistFor(dto.mbid) : [];

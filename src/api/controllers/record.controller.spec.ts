@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RecordController } from './record.controller';
 import { RecordService } from '../services/record.service';
 import { CreateRecordRequestDTO } from '../dtos/create-record.request.dto';
+import { UpdateRecordRequestDTO } from '../dtos/update-record.request.dto';
 import { RecordCategory, RecordFormat } from '../schemas/record.enum';
 import { FindRecordsQueryDTO } from '../dtos/find-records.query.dto';
 
@@ -41,6 +42,27 @@ describe('RecordController', () => {
     const result = await recordController.create(dto);
     expect(result).toEqual(saved);
     expect(recordService.create).toHaveBeenCalledWith(dto);
+  });
+
+  it('delegates update to the service', async () => {
+    const id = '507f1f77bcf86cd799439011';
+    const dto: UpdateRecordRequestDTO = { price: 150, qty: 5 };
+    const updated = { _id: id, ...dto } as any;
+    recordService.update.mockResolvedValue(updated);
+
+    const result = await recordController.update(id, dto);
+    expect(result).toEqual(updated);
+    expect(recordService.update).toHaveBeenCalledWith(id, dto);
+  });
+
+  it('delegates findOne to the service', async () => {
+    const id = '507f1f77bcf86cd799439011';
+    const record = { _id: id, artist: 'Test', album: 'Test Record' } as any;
+    recordService.findById.mockResolvedValue(record);
+
+    const result = await recordController.findOne(id);
+    expect(result).toEqual(record);
+    expect(recordService.findById).toHaveBeenCalledWith(id);
   });
 
   it('delegates findAll to the service with query', async () => {
