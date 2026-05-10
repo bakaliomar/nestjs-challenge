@@ -6,7 +6,6 @@ import { RecordFormat, RecordCategory } from './record.enum';
 export const RECORD_COLLATION = { locale: 'en', strength: 2 } as const;
 
 export interface TrackEntry {
-  position: number;
   title: string;
   length?: number;
 }
@@ -35,7 +34,7 @@ export class Record extends Document {
   mbid?: string;
 
   @Prop({
-    type: [{ position: Number, title: String, length: Number }],
+    type: [{ title: String, length: Number }],
     default: [],
     _id: false,
   })

@@ -53,13 +53,11 @@ export class MusicBrainzService {
     const media = release?.['medium-list']?.medium ?? [];
 
     const tracks: TrackEntry[] = [];
-    let position = 1;
     for (const medium of media) {
       for (const t of medium['track-list']?.track ?? []) {
         const title = t.recording?.title;
         if (!title) continue;
         tracks.push({
-          position: position++,
           title: String(title),
           length: t.length ? Number(t.length) : undefined,
         });
