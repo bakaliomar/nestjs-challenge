@@ -6,8 +6,8 @@ import { MusicBrainzService } from '../../musicbrainz/musicbrainz.service';
 import { RecordCategory, RecordFormat } from '../schemas/record.enum';
 
 const tracks = [
-  { position: 1, title: 'Come Together', length: 259000 },
-  { position: 2, title: 'Something', length: 183000 },
+  { title: 'Come Together', length: 259000 },
+  { title: 'Something', length: 183000 },
 ];
 
 const baseDto = {
