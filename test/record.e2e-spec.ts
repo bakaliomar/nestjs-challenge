@@ -4,6 +4,7 @@ import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { RecordFormat, RecordCategory } from '../src/api/schemas/record.enum';
 import { MusicBrainzService } from '../src/musicbrainz/musicbrainz.service';
+import { REDIS_CLIENT } from '../src/redis/redis.module';
 
 describe('RecordController (e2e)', () => {
   let app: INestApplication;
@@ -16,6 +17,8 @@ describe('RecordController (e2e)', () => {
     })
       .overrideProvider(MusicBrainzService)
       .useValue({ fetchTracklist: jest.fn().mockResolvedValue([]) })
+      .overrideProvider(REDIS_CLIENT)
+      .useValue({ get: jest.fn(), set: jest.fn(), quit: jest.fn() })
       .compile();
 
     app = moduleFixture.createNestApplication();

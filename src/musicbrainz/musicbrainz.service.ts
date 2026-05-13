@@ -1,24 +1,34 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { XMLParser } from 'fast-xml-parser';
 import { firstValueFrom } from 'rxjs';
+import type Redis from 'ioredis';
 import { TrackEntry } from '../api/schemas/record.schema';
+import { REDIS_CLIENT } from '../redis/redis.module';
 
-const ONE_DAY = 24 * 60 * 60 * 1000;
+const ONE_DAY_SECONDS = 24 * 60 * 60;
 
 @Injectable()
 export class MusicBrainzService {
-  private readonly cache = new Map<string, { tracks: TrackEntry[] | null; expires: number }>();
+  private readonly logger = new Logger(MusicBrainzService.name);
   private readonly parser = new XMLParser({
     ignoreAttributes: false,
     isArray: (name) => name === 'medium' || name === 'track',
   });
 
-  constructor(private readonly http: HttpService) {}
+  constructor(
+    private readonly http: HttpService,
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
+  ) {}
 
   async fetchTracklist(mbid: string): Promise<TrackEntry[] | null> {
-    const hit = this.cache.get(mbid);
-    if (hit && hit.expires > Date.now()) return hit.tracks;
+    const key = `mb:tracklist:${mbid}`;
+    const cached = await this.redis.get(key);
+    if (cached !== null) {
+      this.logger.log(`cache HIT for ${mbid}`);
+      return JSON.parse(cached);
+    }
+    this.logger.log(`cache MISS for ${mbid} — fetching from MusicBrainz`);
 
     let xml: string;
     try {
@@ -37,14 +47,14 @@ export class MusicBrainzService {
       xml = res.data;
     } catch (err: any) {
       if (err?.response?.status === 404) {
-        this.cache.set(mbid, { tracks: null, expires: Date.now() + ONE_DAY });
+        await this.redis.set(key, 'null', 'EX', ONE_DAY_SECONDS);
         return null;
       }
       throw err;
     }
 
     const tracks = this.parseTracks(xml);
-    this.cache.set(mbid, { tracks, expires: Date.now() + ONE_DAY });
+    await this.redis.set(key, JSON.stringify(tracks), 'EX', ONE_DAY_SECONDS);
     return tracks;
   }
 
